@@ -1,0 +1,35 @@
+
+SELECT *
+FROM monthlysales
+WHERE TotalSalesAmount = (SELECT MAX(TotalSalesAmount) FROM monthlysales);
+Average price per unit 
+..............................................................................
+SELECT SUM(TotalSalesAmount) / SUM(UnitsSold) AS average_price_per_unit
+FROM monthlysales;
+.................................
+SELECT *
+FROM energyconsumption
+WHERE Month = 'March'
+AND Year = 2024
+AND Type = 'Wind'
+AND Sector = 'Commercial'
+AND Region = 'North';
+..............................
+
+SELECT 
+    Sector,
+    Type,
+    SUM(Usage) AS Total_Usage
+FROM 
+    energyconsumption
+WHERE 
+    Month = 'February'
+    AND Year = 2024
+GROUP BY 
+    Sector, Type
+ORDER BY 
+    Sector, Total_Usage DESC;
+...........................................
+SELECT CustomerID, Name
+FROM insurancepolicies
+WHERE Feedback > (SELECT AVG(Feedback) FROM insurancepolicies);
