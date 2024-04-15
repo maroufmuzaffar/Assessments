@@ -1,0 +1,352 @@
+Final SQL ASSESMENT:
+...............................................................................................
+QNO1:                             LAB 1
+
+
+SELECT p.product_category, AVG(sr.sales_amount) AS avg_sales_amount
+FROM Sales_Records sr
+INNER JOIN Products p ON sr.product_id = p.product_id
+WHERE sr.sales_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+GROUP BY p.product_category;
+
+
+..............................................................................................
+QNO2:
+
+
+SELECT p.product_id, p.product_name, p.product_category, 
+       SUM(sr.sales_amount) AS total_sales_amount
+FROM Products p
+INNER JOIN Sales_Records sr ON p.product_id = sr.product_id
+GROUP BY p.product_id, p.product_name, p.product_category
+ORDER BY total_sales_amount DESC
+LIMIT 3;
+
+..............................................................................................
+QNO3:
+
+
+SELECT
+    c.customer_id,
+    c.customer_name,
+    SUM(sr.sales_amount) AS total_sales_amount,
+    (SUM(sr.sales_amount) / (SELECT SUM(sales_amount) FROM Sales_Records)) * 100 AS contribution_percentage
+FROM
+    Sales_Records sr
+JOIN
+    Customers c ON sr.customer_id = c.customer_id
+GROUP BY
+    c.customer_id, c.customer_name
+ORDER BY
+    contribution_percentage DESC;
+
+
+..............................................................................................
+
+QNO4:
+
+
+-- used CTE to calculate the number of purchases made by each customer in each month
+WITH MonthlyPurchaseCounts AS (
+    SELECT
+        customer_id,
+        EXTRACT(YEAR_MONTH FROM sales_date) AS year_month,
+        COUNT(*) AS purchase_count
+    FROM
+        Sales_Records
+    GROUP BY
+        customer_id,
+        EXTRACT(YEAR_MONTH FROM sales_date)
+),
+
+-- Here i have checked  the number of months a customer has made purchases in the last six months
+RecentActivityCounts AS (
+    SELECT
+        customer_id,
+        COUNT(DISTINCT year_month) AS active_months
+    FROM
+        MonthlyPurchaseCounts
+    WHERE
+        year_month >= DATE_FORMAT(DATE_SUB(CURRENT_DATE(), INTERVAL 5 MONTH), '%Y%m')
+    GROUP BY
+        customer_id
+)
+
+-- Main query to classify customers based on their purchase activity
+SELECT
+    c.customer_id,
+    c.custom
+
+
+..............................................................................................
+QNO5:   
+
+                                       LAB 2
+SELECT
+    departure_airport,
+    arrival_airport,
+    AVG(base_price) AS average_ticket_price
+FROM
+    Flights
+GROUP BY
+    departure_airport,
+    arrival_airport;
+..............................................................................................
+QNO6:
+
+SELECT f.flight_number,
+       f.departure_date,
+       COUNT(t.ticket_id) AS total_tickets_sold
+FROM Flights f
+LEFT JOIN Tickets t ON f.flight_id = t.flight_id
+GROUP BY f.flight_id
+ORDER BY total_tickets_sold DESC;
+
+..............................................................................................
+QNO7:
+SELECT p.passenger_name,
+       SUM(t.ticket_price) AS total_amount_spent,
+       p.frequent_flyer_status
+FROM Passengers p
+JOIN Tickets t ON p.passenger_id = t.passenger_id
+GROUP BY p.passenger_id
+ORDER BY total_amount_spent DESC
+LIMIT 5;
+
+
+..............................................................................................
+QNO8:                         
+SELECT YEAR(f.departure_date) AS year,
+       MONTH(f.departure_date) AS month,
+       COUNT(t.ticket_id) AS total_tickets_sold
+FROM Flights f
+LEFT JOIN Tickets t ON f.flight_id = t.flight_id
+GROUP BY year, month
+ORDER BY total_tickets_sold DESC
+LIMIT 1;
+
+..............................................................................................
+QNO9:   
+
+
+                          LAB 3
+SELECT g.game_genre,
+       AVG(ps.score) AS average_playtime_minutes
+FROM PlayerScores ps
+JOIN Players p ON ps.player_id = p.player_id
+JOIN Games g ON ps.game_id = g.game_id
+GROUP BY g.game_genre
+ORDER BY average_playtime_minutes DESC;
+
+
+..............................................................................................
+QNO10:
+SELECT g.game_name,
+       COUNT(DISTINCT ps.player_id) AS total_players
+FROM PlayerScores ps
+JOIN Games g ON ps.game_id = g.game_id
+GROUP BY g.game_name
+ORDER BY total_players DESC
+LIMIT 3;
+
+..............................................................................................
+QNO11:
+SELECT 
+    g.game_name,
+    COUNT(DISTINCT ps.player_id) AS total_players,
+    AVG(ps.score) AS average_score,
+    MAX(ps.score) AS highest_score
+FROM 
+    PlayerScores ps
+JOIN 
+    Games g ON ps.game_id = g.game_id
+GROUP BY 
+    g.game_name;
+..........................................................................................................
+QNO12:
+SELECT 
+    p.player_id,
+    p.player_name,
+    p.registration_date,
+    MAX(ps.play_date) AS last_activity_date
+FROM 
+    Players p
+LEFT JOIN 
+    PlayerScores ps ON p.player_id = ps.player_id  -- Left join to include all players
+GROUP BY 
+    p.player_id
+HAVING 
+    MAX(ps.play_date) < DATE_SUB(NOW(), INTERVAL 30 DAY)  -- Players who haven't played in the last 30 days
+    AND last_activity_date IS NOT NULL;  -- Players who were active before
+............................................................................................................
+ 
+
+QNO13                                                       LAB 4
+SELECT
+    d.doctor_id,
+    d.doctor_name,
+    d.specialization,
+    d.years_of_experience,               
+    SUM(t.cost) AS total_treatment_cost
+FROM
+    Doctors d
+JOIN
+    Treatments t ON d.doctor_id = t.doctor_id
+GROUP BY
+    d.doctor_id, d.doctor_name, d.specialization, d.years_of_experience
+ORDER BY
+    total_treatment_cost DESC;
+
+.........................................................................................
+QNO14:
+SELECT
+    d.doctor_id,
+    d.doctor_name,
+    d.specialization,
+    d.years_of_experience,
+    SUM(tr.cost) AS total_treatment_cost
+FROM
+    Doctors d
+JOIN
+    Treatments tr ON d.doctor_id = tr.doctor_id
+JOIN
+    Patients p ON tr.patient_id = p.patient_id
+GROUP BY
+    d.doctor_id, d.doctor_name, d.specialization, d.years_of_experience
+ORDER BY
+    total_treatment_cost DESC;
+..................................................................................................
+QNO15:
+
+SELECT 
+    t.treatment_name,
+    SUM(tr.cost) AS total_revenue,
+    (SUM(tr.cost) * 100.0) / (SELECT SUM(cost) FROM Treatments) AS revenue_percentage
+FROM 
+    Treatments tr
+JOIN 
+    Patients p ON tr.patient_id = p.patient_id
+JOIN 
+    Doctors d ON tr.doctor_id = d.doctor_id
+GROUP BY 
+    t.treatment_name;
+
+
+....................................................................................................
+QNO16:
+SELECT 
+    p.patient_id,
+    p.patient_name,
+    p.admission_date,
+    p.discharge_date
+FROM 
+    Patients p
+JOIN 
+    Treatments t ON p.patient_id = t.patient_id
+ORDER BY 
+    p.admission_date ASC;
+............................................................................................................
+QNO17:                         LAB 5
+SELECT 
+    p.gender,
+    p.diagnosis,
+    ROUND(AVG(DATEDIFF(p.discharge_date, p.admission_date)), 0) AS avg_los
+FROM 
+    Patients p
+    INNER JOIN Treatments t ON p.patient_id = t.patient_id
+    INNER JOIN Doctors d ON t.doctor_id = d.doctor_id
+GROUP BY 
+    p.gender, p.diagnosis;
+
+
+
+..................................................................................................... 
+                                                            
+
+
+QNO17:
+
+
+SELECT 
+    c.department,
+    e.semester
+FROM 
+    Enrollments e
+    INNER JOIN Students s ON e.student_id = s.student_id
+    INNER JOIN Courses c ON e.course_id = c.course_id
+ORDER BY 
+    c.department, e.semester;
+
+.................................................
+
+QNO:18
+SELECT 
+    s.major,
+    COUNT(e.student_id) AS total_students,
+    s.enrollment_year
+FROM 
+    Students s
+    INNER JOIN Enrollments e ON s.student_id = e.student_id
+GROUP BY 
+    s.major, s.enrollment_year
+ORDER BY 
+    total_students DESC;
+
+
+.....................................................................................
+QNO:19
+
+SELECT 
+    s.student_id,
+    s.student_name,
+    e.semester,
+    SUM(c.credits) AS total_credits
+FROM 
+    Students s
+    INNER JOIN Enrollments en ON s.student_id = en.student_id
+    INNER JOIN Courses c ON en.course_id = c.course_id
+GROUP BY 
+    s.student_id, s.student_name, e.semester
+HAVING 
+    SUM(c.credits) >= 50;
+
+
+.........................................................................................
+QNO20>
+
+
+
+WITH CourseEnrollments AS (
+   SELECT 
+        c.course_name,
+        s.enrollment_year,
+        COUNT(e.student_id) AS num_students,
+        ROW_NUMBER() OVER(PARTITION BY s.enrollment_year 
+ORDER BY COUNT(e.student_id) DESC) AS row_num
+    FROM 
+       Students s
+    INNER JOIN Enrollments e ON s.student_id = e.student_id
+    INNER JOIN Courses c ON e.course_id = c.course_id
+    GROUP BY 
+        c.course_name,
+        s.enrollment_year
+)
+SELECT 
+    course_name,
+    enrollment_year,
+    num_students
+FROM 
+    CourseEnrollments
+WHERE 
+    row_num <= 3
+ORDER BY 
+    enrollment_year ASC,
+    num_students DESC;
+.............................................................................................................
+                                              [IMPORTANT NOTE]
+I REQUEST YOU TO KINDLY CROSS CHECK MY QUERIES AS I DRY RUN EVERY SINGLE QUERY BUT FOR FEW QUESTIONS 
+THERE MIGHT BE RESHUFFLED (QUESTION NUMBERS)KINDLY LOOK THOROUGHLY. DUE TO TIME CONSTRAINT I WAS NOT ABLE 
+TO SORT MY FILE PROPERLY.
+............................................................................................................
+
+
